@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'search_results.dart';
 
 class SearchFlightScreen extends StatefulWidget {
   @override
@@ -89,7 +90,169 @@ class _SearchFlightScreenState extends State<SearchFlightScreen> {
 
   void _submitForm() {
     if (_formKey.currentState?.validate() ?? false) {
-      // Implement form submission logic
+      // Extract IATA codes from the selected airports
+      String origem = '';
+      String destino = '';
+
+      if (_departureController.text.isNotEmpty) {
+        // Format: "GRU - São Paulo" -> extract "GRU"
+        origem = _departureController.text.split(' - ')[0].trim();
+      }
+
+      if (_arrivalController.text.isNotEmpty) {
+        // Format: "MIA - Miami" -> extract "MIA"
+        destino = _arrivalController.text.split(' - ')[0].trim();
+      }
+
+      // Map the trip type to API format
+      String tipo = _selectedTripType == 'OneWay' ? 'Ida' : 'IdaVolta';
+
+      // Since the dates are already in DD/MM/YYYY format in the text controllers,
+      // we can directly use them for the API
+      String dataIda = _departureDateController.text;
+      String dataVolta;
+
+      if (_returnDateController.text.isNotEmpty) {
+        dataVolta = _returnDateController.text;
+      } else {
+        // Convert departure date string to DateTime
+        List<String> parts = dataIda.split('/');
+        if (parts.length == 3) {
+          int day = int.parse(parts[0]);
+          int month = int.parse(parts[1]);
+          int year = int.parse(parts[2]);
+
+          // Create DateTime from parts and add one day
+          DateTime departureDate = DateTime(year, month, day);
+          DateTime nextDay = departureDate.add(Duration(days: 1));
+
+          // Format to DD/MM/YYYY
+          dataVolta =
+              "${nextDay.day.toString().padLeft(2, '0')}/${nextDay.month.toString().padLeft(2, '0')}/${nextDay.year}";
+        } else {
+          // Fallback if departure date format is invalid
+          DateTime nextDay = DateTime.now().add(Duration(days: 1));
+          dataVolta =
+              "${nextDay.day.toString().padLeft(2, '0')}/${nextDay.month.toString().padLeft(2, '0')}/${nextDay.year}";
+        }
+      }
+
+      // Create the request body
+      Map<String, dynamic> requestBody = {
+        "Companhias":
+            _selectedAirlines.isEmpty
+                ? [
+                  "AMERICAN AIRLINES",
+                  "GOL",
+                  "IBERIA",
+                  "INTERLINE",
+                  "LATAM",
+                  "AZUL",
+                  "TAP",
+                ]
+                : _selectedAirlines,
+        "DataIda": dataIda,
+        "DataVolta": dataVolta,
+        "Origem": origem,
+        "Destino": destino,
+        "Tipo": tipo,
+      };
+
+      // Send the request
+      _sendSearchRequest(requestBody);
+    }
+  }
+
+  Future<void> _sendSearchRequest(Map<String, dynamic> requestBody) async {
+    try {
+      print("REQUEST BODY: " + json.encode(requestBody));
+      final response = await http.post(
+        Uri.parse('http://10.0.2.2:3000/busca/criar'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(requestBody),
+      );
+      print("RESPONSE: " + response.body);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        // Extract the search ID from the response
+        final searchId = json.decode(response.body)['Busca'];
+        print("SEARCH ID: $searchId");
+
+        // Show loading indicator
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Buscando resultados...'),
+            backgroundColor: Colors.blue,
+            behavior: SnackBarBehavior.floating,
+            duration: Duration(seconds: 2),
+          ),
+        );
+
+        // Fetch search results using the ID
+        _fetchSearchResults(searchId);
+      } else {
+        // Error
+        final errorMessage =
+            json.decode(response.body)['message'] ?? response.body;
+        print("RESPONSE BODY: " + response.body);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao realizar busca: $errorMessage'),
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      // Exception
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro ao enviar dados: $e'),
+          backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  Future<void> _fetchSearchResults(String searchId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('http://10.0.2.2:3000/busca/$searchId'),
+      );
+
+      if (response.statusCode == 200) {
+        // Success - parse the results
+        final Map<String, dynamic> searchResults = json.decode(response.body);
+
+        // Navigate to the results screen with the data
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder:
+                (context) => SearchResultsScreen(searchResults: searchResults),
+          ),
+        );
+      } else {
+        // Error fetching results
+        final errorMessage =
+            json.decode(response.body)['message'] ?? response.body;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao obter resultados: $errorMessage'),
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro ao buscar resultados: $e'),
+          backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 
@@ -671,7 +834,9 @@ class _SearchFlightScreenState extends State<SearchFlightScreen> {
     );
     if (_picked != null) {
       setState(() {
-        _departureDateController.text = _picked.toString().split(" ")[0];
+        // Format date as DD/MM/YYYY for display
+        _departureDateController.text =
+            "${_picked.day.toString().padLeft(2, '0')}/${_picked.month.toString().padLeft(2, '0')}/${_picked.year}";
       });
     }
   }
@@ -682,8 +847,16 @@ class _SearchFlightScreenState extends State<SearchFlightScreen> {
     // If departure date is selected, set initial return date to day after
     if (_departureDateController.text.isNotEmpty) {
       try {
-        DateTime departureDate = DateTime.parse(_departureDateController.text);
-        initialDate = departureDate.add(Duration(days: 1));
+        // Parse from DD/MM/YYYY format
+        List<String> parts = _departureDateController.text.split('/');
+        if (parts.length == 3) {
+          DateTime departureDate = DateTime(
+            int.parse(parts[2]), // Year
+            int.parse(parts[1]), // Month
+            int.parse(parts[0]), // Day
+          );
+          initialDate = departureDate.add(Duration(days: 1));
+        }
       } catch (e) {
         // Use default initial date if parsing fails
       }
@@ -709,7 +882,9 @@ class _SearchFlightScreenState extends State<SearchFlightScreen> {
     );
     if (_picked != null) {
       setState(() {
-        _returnDateController.text = _picked.toString().split(" ")[0];
+        // Format date as DD/MM/YYYY for display
+        _returnDateController.text =
+            "${_picked.day.toString().padLeft(2, '0')}/${_picked.month.toString().padLeft(2, '0')}/${_picked.year}";
       });
     }
   }
@@ -720,13 +895,29 @@ class _SearchFlightScreenState extends State<SearchFlightScreen> {
     }
 
     try {
-      DateTime departureDate = DateTime.parse(ida);
-      DateTime returnDate = DateTime.parse(volta);
+      // Parse from DD/MM/YYYY format
+      List<String> idaParts = ida.split('/');
+      List<String> voltaParts = volta.split('/');
 
-      if (departureDate.isAfter(returnDate)) {
-        return false;
+      if (idaParts.length == 3 && voltaParts.length == 3) {
+        DateTime departureDate = DateTime(
+          int.parse(idaParts[2]), // Year
+          int.parse(idaParts[1]), // Month
+          int.parse(idaParts[0]), // Day
+        );
+
+        DateTime returnDate = DateTime(
+          int.parse(voltaParts[2]), // Year
+          int.parse(voltaParts[1]), // Month
+          int.parse(voltaParts[0]), // Day
+        );
+
+        if (departureDate.isAfter(returnDate)) {
+          return false;
+        }
+        return true;
       }
-      return true;
+      return false;
     } catch (e) {
       return false;
     }
