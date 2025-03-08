@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'search_results.dart';
+import 'busca_resultado.dart';
 
 class SearchFlightScreen extends StatefulWidget {
   @override
@@ -156,6 +156,11 @@ class _SearchFlightScreenState extends State<SearchFlightScreen> {
         "Origem": origem,
         "Destino": destino,
         "Tipo": tipo,
+        "Passageiros": {
+          "Adultos": _adults,
+          "Criancas": _children,
+          "Bebes": _infants,
+        },
       };
 
       // Send the request
@@ -224,6 +229,21 @@ class _SearchFlightScreenState extends State<SearchFlightScreen> {
       if (response.statusCode == 200) {
         // Success - parse the results
         final Map<String, dynamic> searchResults = json.decode(response.body);
+
+        // Add passenger counts to each flight in the search results if not already present
+        if (searchResults.containsKey('Voos')) {
+          List<dynamic> flights = searchResults['Voos'];
+          for (var flight in flights) {
+            // Only add passenger info if it doesn't already exist
+            if (!flight.containsKey('Passageiros')) {
+              flight['Passageiros'] = {
+                "Adultos": _adults,
+                "Criancas": _children,
+                "Bebes": _infants,
+              };
+            }
+          }
+        }
 
         // Navigate to the results screen with the data
         Navigator.push(
