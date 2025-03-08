@@ -85,6 +85,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
         ),
         elevation: 0,
         backgroundColor: _primaryColor,
+        foregroundColor: Colors.white,
       ),
       body: Column(
         children: [

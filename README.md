@@ -37,7 +37,7 @@ Um aplicativo simples desenvolvido em Flutter que permite aos usuários buscar v
 
 ## 🌐 API
 
-O aplicativo se conecta a uma mock API para obter dados de aeroportos. Para desenvolvimento local, a API está configurada para acessar `http://10.0.2.2:3000/aeroportos`. A mock API utilizada está disponível neste link: https://github.com/gralmeidan/busca-mock-api
+O aplicativo se conecta a uma mock API para obter dados de aeroportos. A API está configurada para acessar `https://buscamilhas.mock.gralmeidan.dev`. A mock API utilizada está disponível neste link: https://github.com/gralmeidan/busca-mock-api
 
 ## 📱 Compatibilidade
 
