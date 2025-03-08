@@ -39,9 +39,13 @@ Um aplicativo simples desenvolvido em Flutter que permite aos usuários buscar v
 
 O aplicativo se conecta a uma mock API para obter dados de aeroportos. Para desenvolvimento local, a API está configurada para acessar `http://10.0.2.2:3000/aeroportos`. A mock API utilizada está disponível neste link: https://github.com/gralmeidan/busca-mock-api
 
+## 📱 Compatibilidade
+
+O aplicativo foi testado em um Pixel 8, portanto é recomendado utilizá-lo neste dispositivo para a melhor experiência possível.
+
 ## 🔧 Estrutura do Projeto
 
 - `lib/`: Código fonte principal
   - `screens/`: Telas do aplicativo
     - `busca_voos.dart`: Implementação da tela de busca de voos
-  - [Outros diretórios conforme expandir o projeto]
+    - `resultado_busca.dart`: Implementacao da tela de resultado da busca
