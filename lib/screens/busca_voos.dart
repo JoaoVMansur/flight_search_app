@@ -172,7 +172,7 @@ class _SearchFlightScreenState extends State<SearchFlightScreen> {
     try {
       print("REQUEST BODY: " + json.encode(requestBody));
       final response = await http.post(
-        Uri.parse('http://10.0.2.2:3000/busca/criar'),
+        Uri.parse('https://buscamilhas.mock.gralmeidan.dev/busca/criar'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode(requestBody),
       );
@@ -223,7 +223,7 @@ class _SearchFlightScreenState extends State<SearchFlightScreen> {
   Future<void> _fetchSearchResults(String searchId) async {
     try {
       final response = await http.get(
-        Uri.parse('http://10.0.2.2:3000/busca/$searchId'),
+        Uri.parse('https://buscamilhas.mock.gralmeidan.dev/busca/$searchId'),
       );
 
       if (response.statusCode == 200) {
@@ -289,7 +289,7 @@ class _SearchFlightScreenState extends State<SearchFlightScreen> {
   Future<void> _fetchAeroportos(String query) async {
     try {
       final response = await http.get(
-        Uri.parse('http://10.0.2.2:3000/aeroportos'),
+        Uri.parse('https://buscamilhas.mock.gralmeidan.dev/aeroportos'),
       );
 
       if (response.statusCode == 200) {
