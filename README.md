@@ -43,9 +43,3 @@ O aplicativo se conecta a uma mock API para obter dados de aeroportos. A API est
 
 O aplicativo foi testado em um Pixel 8, portanto é recomendado utilizá-lo neste dispositivo para a melhor experiência possível.
 
-## 🔧 Estrutura do Projeto
-
-- `lib/`: Código fonte principal
-  - `screens/`: Telas do aplicativo
-    - `busca_voos.dart`: Implementação da tela de busca de voos
-    - `resultado_busca.dart`: Implementacao da tela de resultado da busca
